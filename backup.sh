@@ -6,17 +6,15 @@ if ! $IS_GIT_AVAILABLE == *"version"* ; then
     exit 1;
 fi
 
-# Check git status
-gs="$(git status | grep -i "modified")"
-echo "${gs}"
+BASEDIR=$(dirname $0)/gist
 
-# If there is a new change
-if [ ! $gs == *"modified"* ]; then
+# Check git status
+HAVE_CHANGES="$(git -C $BASEDIR status --porcelain)"
+if [[ $(git -C $BASEDIR status --porcelain | wc -c) -eq 0 ]] ; then
     echo "no changes"
     exit 1;
 fi
 
-cd $(pwd)/gist
-git add .
-git commit -m "New backup `date +'%Y-%m-%d %H:%M:%S'`"
-git push origin main
+git -C $BASEDIR add .
+git -C $BASEDIR commit -m "New backup `date +'%Y-%m-%d %H:%M:%S'`"
+git -C $BASEDIR push origin main

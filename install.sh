@@ -8,7 +8,7 @@ else
     ls -l ~/.bash_history
     echo "Check if the previous row is a link to your .bash_history in gist folder"
 fi
-(crontab -l 2>/dev/null; echo "*/5 * * * * sh $(pwd)/backup.sh";) | crontab -
+(crontab -l 2>/dev/null; echo "*/1 * * * * sh $(pwd)/backup.sh > $(pwd)/backup.log 2>&1";) | crontab -
 echo "Crontab created"
 echo "Generating the fist backup..."
 sh backup.sh
