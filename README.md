@@ -2,6 +2,8 @@
 
 Never more lost your `.bash_history`
 
+> **PS**: I can't solved a problem: the crontab haven't permission to get the ssh-agent. You will need push the gist directory manually.
+
 ## Explaning how this project work
 
 The target is save your `.bash_history` into a secret gist.
