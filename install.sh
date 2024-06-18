@@ -1,6 +1,7 @@
 #!/bin/bash
 
 if [ ! -L ~/.bash_history ]; then
+    > gist/.bash_history
     cat ~/.bash_history >> gist/.bash_history
     ln -sf $(pwd)"/gist/.bash_history" ~/.bash_history
     echo "symlink created"
