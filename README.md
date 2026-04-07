@@ -9,8 +9,8 @@ Never more lost your `.bash_history`
 The target is save your `.bash_history` into a secret gist.
 
 Install script will:
-* append your current `.bash_history` to bash_history of your secret gist
-* delete your bash_history and create a simbolyc link to bash_history from your secret gist
+* append your current `.bash_history` to `.bash_history` in your secret gist without truncating an existing backup
+* delete your bash_history and create a simbolyc link to `.bash_history` from your secret gist
 * configure crontab to run script `backup.sh` every 5 minutes
 
 ## Install
@@ -19,7 +19,7 @@ Install script will:
 * Clone this repository in a place that you want
 * go to cloned folder, probabily will be `bash_history`
 * go to `gist.github.com`
-* Create a secret gist with a file called `bash_history` and put only the command `date` or other commant. Isn't possible create an empty gist file
+* Create a secret gist with a file called `.bash_history` and put only the command `date` or other command. Isn't possible create an empty gist file
 * Clone your secret gist using the follow command:
   ```bash
   git clone git@gist.github.com:<hash-of-your-gist>.git gist
@@ -37,6 +37,16 @@ Install script will:
 ```bash
 git config user.name "Your Name" && git config user.email your@email.coop
 ```
+
+## Recovery
+
+If your current `.bash_history` shrank unexpectedly, your latest committed backup is still available in the local gist clone:
+
+```bash
+git -C gist show HEAD:.bash_history > recovered.bash_history
+```
+
+The backup script now refuses to auto-commit a destructive shrink, so a truncated history file will stop the backup instead of replacing the last good snapshot.
 
 ## Make .bash_history big
 Add the follow lines to your `~/.bashrc`
