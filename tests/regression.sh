@@ -56,6 +56,11 @@ test_install_preserves_existing_history() {
 
     [ -L "$sandbox/home/.bash_history" ] || fail "install.sh did not create the history symlink"
     [ "$(readlink -f "$sandbox/home/.bash_history")" = "$sandbox/gist/.bash_history" ] || fail "install.sh linked to the wrong file"
+    [ -f "$sandbox/home/.bashrc" ] || fail "install.sh did not create .bashrc"
+    grep -Fq '# >>> bash_history managed block >>>' "$sandbox/home/.bashrc" || fail "install.sh did not add the bash history managed block"
+    grep -Fxq 'HISTSIZE=1000000' "$sandbox/home/.bashrc" || fail "install.sh did not set HISTSIZE"
+    grep -Fxq 'HISTFILESIZE=2000000' "$sandbox/home/.bashrc" || fail "install.sh did not set HISTFILESIZE"
+    grep -Fxq 'PROMPT_COMMAND="history -a; history -n"' "$sandbox/home/.bashrc" || fail "install.sh did not set PROMPT_COMMAND"
     grep -qx 'date' "$sandbox/gist/.bash_history" || fail "install.sh did not preserve the gist history"
     grep -qx 'local-command' "$sandbox/gist/.bash_history" || fail "install.sh did not append the local history"
     grep -Fq "$sandbox/backup.sh > $sandbox/backup.log 2>&1" "$sandbox/crontab.txt" || fail "install.sh did not write the backup command to crontab"
