@@ -7,6 +7,9 @@ GIST_DIR="$SCRIPT_DIR/gist"
 TARGET_HISTORY="$GIST_DIR/.bash_history"
 LEGACY_HISTORY="$GIST_DIR/bash_history"
 LOCAL_HISTORY="$HOME/.bash_history"
+BASHRC_FILE="$HOME/.bashrc"
+BASH_HISTORY_BLOCK_START="# >>> bash_history managed block >>>"
+BASH_HISTORY_BLOCK_END="# <<< bash_history managed block <<<"
 CRON_ENTRY="*/1 * * * * $SCRIPT_DIR/backup.sh > $SCRIPT_DIR/backup.log 2>&1"
 
 if [ ! -d "$GIST_DIR/.git" ]; then
@@ -19,6 +22,25 @@ if [ -f "$LEGACY_HISTORY" ] && [ ! -f "$TARGET_HISTORY" ]; then
 fi
 
 touch "$TARGET_HISTORY"
+
+if [ ! -f "$BASHRC_FILE" ]; then
+    touch "$BASHRC_FILE"
+fi
+
+if ! grep -Fq "$BASH_HISTORY_BLOCK_START" "$BASHRC_FILE"; then
+    {
+        echo ""
+        echo "$BASH_HISTORY_BLOCK_START"
+        echo "# Keep a large, append-only history persisted across sessions."
+        echo "HISTCONTROL=ignoreboth"
+        echo "shopt -s histappend"
+        echo "HISTSIZE=1000000"
+        echo "HISTFILESIZE=2000000"
+        echo "PROMPT_COMMAND=\"history -a; history -n\""
+        echo "$BASH_HISTORY_BLOCK_END"
+    } >> "$BASHRC_FILE"
+    echo "bash history config added to $BASHRC_FILE"
+fi
 
 if [ ! -L "$LOCAL_HISTORY" ]; then
     if [ -f "$LOCAL_HISTORY" ]; then

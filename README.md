@@ -12,6 +12,7 @@ Install script will:
 * append your current `.bash_history` to `.bash_history` in your secret gist without truncating an existing backup
 * delete your bash_history and create a simbolyc link to `.bash_history` from your secret gist
 * configure crontab to run script `backup.sh` every 5 minutes
+* configure your `~/.bashrc` to keep a large append-only history (`HISTSIZE`/`HISTFILESIZE`)
 
 ## Install
 
@@ -49,7 +50,9 @@ git -C gist show HEAD:.bash_history > recovered.bash_history
 The backup script now refuses to auto-commit a destructive shrink, so a truncated history file will stop the backup instead of replacing the last good snapshot.
 
 ## Make .bash_history big
-Add the follow lines to your `~/.bashrc`
+`install.sh` already adds this block automatically to your `~/.bashrc`.
+
+If you prefer to configure it manually, add the follow lines to your `~/.bashrc`:
 ```bash
 # don't put duplicate lines or lines starting with space in the history.
 # See bash(1) for more options
@@ -63,7 +66,7 @@ HISTSIZE=1000000
 HISTFILESIZE=2000000
 
 # Save and reload the history after each command finishes
-export PROMPT_COMMAND="history -a; history -c; history -r; $PROMPT_COMMAND"
+PROMPT_COMMAND="history -a; history -n; ${PROMPT_COMMAND:-}"
 ```
 
 ## To check if install executed fine:
