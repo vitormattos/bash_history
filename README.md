@@ -63,11 +63,16 @@ shopt -s histappend
 
 # for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
 HISTSIZE=1000000
-HISTFILESIZE=2000000
+unset HISTFILESIZE
 
 # Save and reload the history after each command finishes
 PROMPT_COMMAND="history -a; history -n; ${PROMPT_COMMAND:-}"
+
+# Ensure history is saved before shell exits
+trap 'history -a' EXIT
 ```
+
+If you are fixing an already-open shell after restoring `~/.bash_history`, run `history -c && history -r` once to reload the current session from disk.
 
 ## To check if install executed fine:
 
