@@ -59,13 +59,66 @@ test_install_preserves_existing_history() {
     [ -f "$sandbox/home/.bashrc" ] || fail "install.sh did not create .bashrc"
     grep -Fq '# >>> bash_history managed block >>>' "$sandbox/home/.bashrc" || fail "install.sh did not add the bash history managed block"
     grep -Fxq 'HISTSIZE=1000000' "$sandbox/home/.bashrc" || fail "install.sh did not set HISTSIZE"
-    grep -Fxq 'HISTFILESIZE=2000000' "$sandbox/home/.bashrc" || fail "install.sh did not set HISTFILESIZE"
-    grep -Fxq 'PROMPT_COMMAND="history -a; history -n"' "$sandbox/home/.bashrc" || fail "install.sh did not set PROMPT_COMMAND"
+    grep -Fxq 'unset HISTFILESIZE' "$sandbox/home/.bashrc" || fail "install.sh did not unset HISTFILESIZE"
+    grep -Fxq 'PROMPT_COMMAND="history -a; history -n; ${PROMPT_COMMAND:-}"' "$sandbox/home/.bashrc" || fail "install.sh did not set PROMPT_COMMAND"
+    grep -Fxq "trap 'history -a' EXIT" "$sandbox/home/.bashrc" || fail "install.sh did not set EXIT trap"
     grep -qx 'date' "$sandbox/gist/.bash_history" || fail "install.sh did not preserve the gist history"
     grep -qx 'local-command' "$sandbox/gist/.bash_history" || fail "install.sh did not append the local history"
     grep -Fq "$sandbox/backup.sh > $sandbox/backup.log 2>&1" "$sandbox/crontab.txt" || fail "install.sh did not write the backup command to crontab"
     if grep -Fq "sh $sandbox/backup.sh" "$sandbox/crontab.txt"; then
         fail "install.sh still wraps backup.sh with sh in crontab"
+    fi
+}
+
+test_install_updates_existing_bashrc_block() {
+    sandbox="$TMP_DIR/update"
+    mkdir -p "$sandbox/home" "$sandbox/bin" "$sandbox/gist"
+    cp "$ROOT_DIR/install.sh" "$ROOT_DIR/backup.sh" "$sandbox/"
+
+    setup_git_repo "$sandbox/gist" "$sandbox/remote.git"
+
+    printf 'date\n' > "$sandbox/gist/.bash_history"
+    git -C "$sandbox/gist" add .bash_history
+    git -C "$sandbox/gist" commit -qm "Initial gist"
+    git -C "$sandbox/gist" push -q -u origin main
+
+    {
+        printf '%s\n' '#!/bin/sh'
+        printf '%s\n' "store=\"$sandbox/crontab.txt\""
+        printf '%s\n' 'if [ "${1:-}" = "-l" ]; then'
+        printf '%s\n' '    if [ -f "$store" ]; then'
+        printf '%s\n' '        cat "$store"'
+        printf '%s\n' '    else'
+        printf '%s\n' '        exit 1'
+        printf '%s\n' '    fi'
+        printf '%s\n' 'else'
+        printf '%s\n' '    cat > "$store"'
+        printf '%s\n' 'fi'
+    } > "$sandbox/bin/crontab"
+    chmod +x "$sandbox/bin/crontab"
+
+    cat > "$sandbox/home/.bashrc" <<'EOF'
+# >>> bash_history managed block >>>
+# Keep a large, append-only history persisted across sessions.
+HISTCONTROL=ignoreboth
+shopt -s histappend
+HISTSIZE=1000000
+HISTFILESIZE=2000000
+PROMPT_COMMAND="history -a; history -n"
+# <<< bash_history managed block <<<
+EOF
+
+    PATH="$sandbox/bin:$PATH" HOME="$sandbox/home" sh "$sandbox/install.sh" >/dev/null
+
+    [ "$(grep -Fc '# >>> bash_history managed block >>>' "$sandbox/home/.bashrc")" -eq 1 ] || fail "install.sh duplicated the managed block"
+    grep -Fxq 'unset HISTFILESIZE' "$sandbox/home/.bashrc" || fail "install.sh did not refresh HISTFILESIZE in existing block"
+    grep -Fxq 'PROMPT_COMMAND="history -a; history -n; ${PROMPT_COMMAND:-}"' "$sandbox/home/.bashrc" || fail "install.sh did not refresh PROMPT_COMMAND in existing block"
+    grep -Fxq "trap 'history -a' EXIT" "$sandbox/home/.bashrc" || fail "install.sh did not add EXIT trap to existing block"
+    if grep -Fxq 'HISTFILESIZE=2000000' "$sandbox/home/.bashrc"; then
+        fail "install.sh left the old HISTFILESIZE in place"
+    fi
+    if grep -Fxq 'PROMPT_COMMAND="history -a; history -n"' "$sandbox/home/.bashrc"; then
+        fail "install.sh left the old PROMPT_COMMAND in place"
     fi
 }
 
@@ -95,6 +148,7 @@ test_backup_rejects_truncation() {
 }
 
 test_install_preserves_existing_history
+test_install_updates_existing_bashrc_block
 test_backup_rejects_truncation
 
 echo "All regression tests passed"
