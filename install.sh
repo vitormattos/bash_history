@@ -27,6 +27,11 @@ if [ ! -f "$BASHRC_FILE" ]; then
     touch "$BASHRC_FILE"
 fi
 
+# Drop the obsolete full reload that conflicts with history -n.
+# A copy of the original bashrc is retained before editing.
+cp -p "$BASHRC_FILE" "$BASHRC_FILE.pre-bash-history-install"
+sed -i "/^export PROMPT_COMMAND=\"history -a; history -c; history -r;/d" "$BASHRC_FILE"
+
 if grep -Fq "$BASH_HISTORY_BLOCK_START" "$BASHRC_FILE"; then
     TMP_BASHRC=$(mktemp)
     awk -v start="$BASH_HISTORY_BLOCK_START" -v end="$BASH_HISTORY_BLOCK_END" '
@@ -45,7 +50,7 @@ fi
     echo "shopt -s histappend"
     echo "HISTSIZE=1000000"
     echo "unset HISTFILESIZE"
-    echo "PROMPT_COMMAND=\"history -a; history -n; \${PROMPT_COMMAND:-}\""
+    echo "PROMPT_COMMAND=\"history -a; history -n\""
     echo "trap 'history -a' EXIT"
     echo "$BASH_HISTORY_BLOCK_END"
 } >> "$BASHRC_FILE"

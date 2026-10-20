@@ -60,7 +60,7 @@ test_install_preserves_existing_history() {
     grep -Fq '# >>> bash_history managed block >>>' "$sandbox/home/.bashrc" || fail "install.sh did not add the bash history managed block"
     grep -Fxq 'HISTSIZE=1000000' "$sandbox/home/.bashrc" || fail "install.sh did not set HISTSIZE"
     grep -Fxq 'unset HISTFILESIZE' "$sandbox/home/.bashrc" || fail "install.sh did not unset HISTFILESIZE"
-    grep -Fxq 'PROMPT_COMMAND="history -a; history -n; ${PROMPT_COMMAND:-}"' "$sandbox/home/.bashrc" || fail "install.sh did not set PROMPT_COMMAND"
+    grep -Fxq 'PROMPT_COMMAND="history -a; history -n"' "$sandbox/home/.bashrc" || fail "install.sh did not set PROMPT_COMMAND"
     grep -Fxq "trap 'history -a' EXIT" "$sandbox/home/.bashrc" || fail "install.sh did not set EXIT trap"
     grep -qx 'date' "$sandbox/gist/.bash_history" || fail "install.sh did not preserve the gist history"
     grep -qx 'local-command' "$sandbox/gist/.bash_history" || fail "install.sh did not append the local history"
@@ -112,12 +112,12 @@ EOF
 
     [ "$(grep -Fc '# >>> bash_history managed block >>>' "$sandbox/home/.bashrc")" -eq 1 ] || fail "install.sh duplicated the managed block"
     grep -Fxq 'unset HISTFILESIZE' "$sandbox/home/.bashrc" || fail "install.sh did not refresh HISTFILESIZE in existing block"
-    grep -Fxq 'PROMPT_COMMAND="history -a; history -n; ${PROMPT_COMMAND:-}"' "$sandbox/home/.bashrc" || fail "install.sh did not refresh PROMPT_COMMAND in existing block"
+    grep -Fxq 'PROMPT_COMMAND="history -a; history -n"' "$sandbox/home/.bashrc" || fail "install.sh did not refresh PROMPT_COMMAND in existing block"
     grep -Fxq "trap 'history -a' EXIT" "$sandbox/home/.bashrc" || fail "install.sh did not add EXIT trap to existing block"
     if grep -Fxq 'HISTFILESIZE=2000000' "$sandbox/home/.bashrc"; then
         fail "install.sh left the old HISTFILESIZE in place"
     fi
-    if grep -Fxq 'PROMPT_COMMAND="history -a; history -n"' "$sandbox/home/.bashrc"; then
+    if grep -Fxq 'PROMPT_COMMAND="history -a; history -n; ${PROMPT_COMMAND:-}"' "$sandbox/home/.bashrc"; then
         fail "install.sh left the old PROMPT_COMMAND in place"
     fi
 }
@@ -143,7 +143,7 @@ test_backup_rejects_truncation() {
         fail "backup.sh accepted a destructive truncation"
     fi
 
-    grep -Fq 'Refusing to back up a truncated .bash_history' "$sandbox/output.txt" || fail "backup.sh did not explain the truncation rejection"
+    grep -Fq 'Refusing history shrink' "$sandbox/output.txt" || fail "backup.sh did not explain the truncation rejection"
     [ "$(git -C "$sandbox/gist" rev-list --count HEAD)" -eq 1 ] || fail "backup.sh created an unexpected commit"
 }
 
